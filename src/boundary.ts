@@ -1,4 +1,5 @@
 import { Cause, Effect, Exit, Ref } from "effect";
+import type { LogLevel } from "effect";
 import { dual } from "effect/Function";
 import { WideEventRef } from "./wide-event.js";
 
@@ -23,6 +24,19 @@ export interface WideEventEnvelope {
 }
 
 /**
+ * Log level for the wide event emission.
+ */
+export type WideEventLevel = LogLevel.Severity;
+
+/**
+ * Custom error extractor. Return the fields to merge into the envelope.
+ */
+export type ErrorExtractor = (cause: Cause.Cause<unknown>) => {
+  errorType: string;
+  errorMessage: string;
+};
+
+/**
  * Transport-level context for a wide event boundary.
  */
 export interface WideEventContext {
@@ -31,9 +45,17 @@ export interface WideEventContext {
   readonly path?: string;
   readonly actor?: string;
   readonly requestId?: string;
+  /** Log level for the emitted event. Default: "Info" */
+  readonly level?: WideEventLevel;
+  /** Static fields merged into every event (before user fields). */
+  readonly envelope?: Record<string, unknown>;
+  /** Custom error extractor. Default: tagged → Error → defect → interrupt. */
+  readonly extractError?: ErrorExtractor;
+  /** Hook called with the final event after emission. Runs inside the uninterruptible block. */
+  readonly onEmit?: (event: Record<string, unknown>) => Effect.Effect<void>;
 }
 
-const extractError = (cause: Cause.Cause<unknown>): { errorType: string; errorMessage: string } => {
+const defaultExtractError: ErrorExtractor = (cause) => {
   for (const reason of cause.reasons) {
     if (reason._tag === "Fail") {
       const failure = reason.error;
@@ -95,6 +117,16 @@ const buildTransportFields = (context: WideEventContext): Record<string, unknown
  *   }),
  *   withWideEvent({ service: "checkout", method: "POST", path: "/api/checkout" }),
  * )
+ *
+ * // With options
+ * pipe(
+ *   myEffect,
+ *   withWideEvent({
+ *     service: "health",
+ *     level: "Debug",
+ *     envelope: { environment: "prod", region: "us-east-1" },
+ *   }),
+ * )
  * ```
  */
 export const withWideEvent: {
@@ -116,7 +148,11 @@ export const withWideEvent: {
     Effect.uninterruptible(
       Effect.gen(function* () {
         // Each boundary gets a fresh, isolated Ref pre-loaded with transport fields
-        const ref = Ref.makeUnsafe<Record<string, unknown>>(buildTransportFields(context));
+        const initialFields = {
+          ...context.envelope,
+          ...buildTransportFields(context),
+        };
+        const ref = Ref.makeUnsafe<Record<string, unknown>>(initialFields);
 
         const spanName =
           context.method !== undefined && context.path !== undefined
@@ -155,7 +191,8 @@ export const withWideEvent: {
         };
 
         if (Exit.isFailure(exit)) {
-          const errorInfo = extractError(exit.cause);
+          const extract = context.extractError ?? defaultExtractError;
+          const errorInfo = extract(exit.cause);
           envelope["errorType"] = errorInfo.errorType;
           envelope["errorMessage"] = errorInfo.errorMessage;
         }
@@ -163,7 +200,14 @@ export const withWideEvent: {
         // Merge: envelope fields take precedence over user fields for reserved keys
         const finalEvent = { ...userFields, ...envelope };
 
-        yield* Effect.logInfo("wide-event").pipe(Effect.annotateLogs(finalEvent));
+        // Emit at the configured log level
+        const level = context.level ?? "Info";
+        yield* Effect.logWithLevel(level)("wide-event").pipe(Effect.annotateLogs(finalEvent));
+
+        // Run onEmit hook if provided
+        if (context.onEmit !== undefined) {
+          yield* context.onEmit(finalEvent);
+        }
 
         // Re-surface the original exit
         return yield* exit;
