@@ -1,4 +1,4 @@
-import { Effect, Fiber, MutableRef } from "effect";
+import { Cause, Effect, Fiber, LogLevel, Logger, MutableRef, Option } from "effect";
 import { describe, expect, it } from "effect-bun-test/v3";
 import { WideEvent, WideEventLogger, withWideEvent } from "../src/index.js";
 import type { LogEvent } from "../src/index.js";
@@ -368,6 +368,92 @@ describe("withWideEvent", () => {
       expect(a["beforeDefect"]).toBe(true);
       expect(a["status"]).toBe("error");
       expect(a["errorType"]).toBe("Defect:Error");
+    }),
+  );
+
+  it.live("custom log level", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* Effect.void.pipe(
+        withWideEvent({ service: "health", level: "Debug" }),
+        Logger.withMinimumLogLevel(LogLevel.Trace),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const events = MutableRef.get(captured);
+      expect(events).toHaveLength(1);
+      expect(events[0]!.level).toBe("DEBUG");
+    }),
+  );
+
+  it.live("envelope fields merged into every event", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* WideEvent.set({ custom: "field" }).pipe(
+        withWideEvent({
+          service: "my-svc",
+          envelope: { environment: "prod", region: "us-east-1" },
+        }),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const a = MutableRef.get(captured)[0]!.annotations;
+      expect(a["environment"]).toBe("prod");
+      expect(a["region"]).toBe("us-east-1");
+      expect(a["custom"]).toBe("field");
+      expect(a["service"]).toBe("my-svc");
+    }),
+  );
+
+  it.live("custom error extractor", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* Effect.fail({ code: "ENOENT", path: "/missing" }).pipe(
+        withWideEvent({
+          service: "fs",
+          extractError: (cause) => {
+            const failure = Cause.failureOption(cause);
+            if (Option.isSome(failure)) {
+              const err = failure.value as { code: string; path: string };
+              return { errorType: err.code, errorMessage: `Not found: ${err.path}` };
+            }
+            return { errorType: "Unknown", errorMessage: "unknown" };
+          },
+        }),
+        Effect.catchAll(() => Effect.void),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const a = MutableRef.get(captured)[0]!.annotations;
+      expect(a["errorType"]).toBe("ENOENT");
+      expect(a["errorMessage"]).toBe("Not found: /missing");
+    }),
+  );
+
+  it.live("onEmit hook receives final event", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+      const hookCaptured = MutableRef.make<Array<Record<string, unknown>>>([]);
+
+      yield* WideEvent.set({ userId: "456" }).pipe(
+        withWideEvent({
+          service: "audit",
+          onEmit: (event) =>
+            Effect.sync(() => {
+              MutableRef.set(hookCaptured, [...MutableRef.get(hookCaptured), event]);
+            }),
+        }),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const hookEvents = MutableRef.get(hookCaptured);
+      expect(hookEvents).toHaveLength(1);
+      expect(hookEvents[0]!["service"]).toBe("audit");
+      expect(hookEvents[0]!["userId"]).toBe("456");
+      expect(hookEvents[0]!["status"]).toBe("ok");
     }),
   );
 });
