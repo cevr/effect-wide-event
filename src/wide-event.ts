@@ -1,14 +1,13 @@
-import { Effect, Ref, ServiceMap } from "effect";
+import { Context, Effect, Ref } from "effect";
 
 /**
  * The service holding the wide event accumulator Ref.
  * Each boundary provides a fresh Ref to its inner effect.
  * @internal — not part of the public API.
  */
-export class WideEventRef extends ServiceMap.Service<
-  WideEventRef,
-  Ref.Ref<Record<string, unknown>>
->()("effect-wide-event/src/wide-event/WideEventRef") {}
+export class WideEventRef extends Context.Service<WideEventRef, Ref.Ref<Record<string, unknown>>>()(
+  "effect-wide-event/src/wide-event/WideEventRef",
+) {}
 
 /**
  * Wide event accumulator — accumulates structured fields throughout a
