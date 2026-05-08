@@ -78,6 +78,16 @@ Default export is Effect v4. For v3:
 import { WideEvent, withWideEvent, WideEventLogger } from "effect-wide-event/v3";
 ```
 
+## Development
+
+This repo follows the shared Effect project scaffold: Bun, `@effect/tsgo`,
+oxlint, oxfmt, lefthook, changesets, and a v3 compatibility surface.
+
+```sh
+bun install
+bun run gate
+```
+
 ## License
 
 MIT

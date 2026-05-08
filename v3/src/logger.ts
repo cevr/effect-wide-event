@@ -1,4 +1,5 @@
-import { HashMap, Layer, Logger, MutableRef } from "effect";
+import type { Layer } from "effect";
+import { HashMap, Logger, MutableRef } from "effect";
 
 /**
  * A captured log event for testing.
@@ -46,9 +47,11 @@ export const WideEventLogger = {
         current = current.tail;
       }
       if (spanEntries.length > 0) {
-        const latestSpan = spanEntries[0]!;
-        entry["spanLabel"] = latestSpan[0];
-        entry["spanDuration"] = Date.now() - latestSpan[1];
+        const latestSpan = spanEntries[0];
+        if (latestSpan !== undefined) {
+          entry["spanLabel"] = latestSpan[0];
+          entry["spanDuration"] = date.getTime() - latestSpan[1];
+        }
       }
 
       // Add cause if present

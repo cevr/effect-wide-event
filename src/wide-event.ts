@@ -6,7 +6,7 @@ import { Context, Effect, Ref } from "effect";
  * @internal — not part of the public API.
  */
 export class WideEventRef extends Context.Service<WideEventRef, Ref.Ref<Record<string, unknown>>>()(
-  "effect-wide-event/src/wide-event/WideEventRef",
+  "effect-wide-event/wide-event/WideEventRef",
 ) {}
 
 /**

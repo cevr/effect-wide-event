@@ -5,7 +5,7 @@ import { Context, Effect, Ref } from "effect";
  * Each boundary provides a fresh Ref to its inner effect.
  * @internal — not part of the public API.
  */
-export class WideEventRef extends Context.Tag("effect-wide-event/WideEventRef")<
+export class WideEventRef extends Context.Tag("effect-wide-event/wide-event/WideEventRef")<
   WideEventRef,
   Ref.Ref<Record<string, unknown>>
 >() {}

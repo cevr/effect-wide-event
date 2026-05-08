@@ -9,9 +9,5 @@ pre-commit:
       stage_fixed: true
     - name: typecheck
       run: bun run typecheck
-    - name: typecheck-v3
-      run: bun run typecheck:v3
     - name: test
-      run: bun run test
-    - name: test-v3
-      run: bun run test:v3
+      run: bun run test:all

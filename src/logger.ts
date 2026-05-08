@@ -1,4 +1,5 @@
-import { Layer, Logger, MutableRef, References } from "effect";
+import type { Layer } from "effect";
+import { Logger, MutableRef, References } from "effect";
 
 /**
  * A captured log event for testing.
@@ -43,9 +44,11 @@ export const WideEventLogger = {
 
       // Add span info
       if (spans.length > 0) {
-        const currentSpan = spans[spans.length - 1]!;
-        entry["spanLabel"] = currentSpan[0];
-        entry["spanDuration"] = Date.now() - currentSpan[1];
+        const currentSpan = spans.at(-1);
+        if (currentSpan !== undefined) {
+          entry["spanLabel"] = currentSpan[0];
+          entry["spanDuration"] = date.getTime() - currentSpan[1];
+        }
       }
 
       // Add cause if present

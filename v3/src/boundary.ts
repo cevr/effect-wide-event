@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, LogLevel, Option, Ref } from "effect";
+import { Cause, Clock, DateTime, Effect, Exit, LogLevel, Option, Ref } from "effect";
 import { dual } from "effect/Function";
 import { WideEventRef } from "./wide-event.js";
 
@@ -77,7 +77,7 @@ const defaultExtractError: ErrorExtractor = (cause) => {
       const tagged = value as { _tag: string; message?: string };
       return {
         errorType: tagged._tag,
-        errorMessage: tagged.message ?? String(value),
+        errorMessage: tagged.message ?? stringifyUnknown(value),
       };
     }
     if (value instanceof Error) {
@@ -86,7 +86,7 @@ const defaultExtractError: ErrorExtractor = (cause) => {
         errorMessage: value.message,
       };
     }
-    return { errorType: "Unknown", errorMessage: String(value) };
+    return { errorType: "Unknown", errorMessage: stringifyUnknown(value) };
   }
 
   // Check for defects
@@ -99,10 +99,23 @@ const defaultExtractError: ErrorExtractor = (cause) => {
         errorMessage: value.message,
       };
     }
-    return { errorType: "Defect", errorMessage: String(value) };
+    return { errorType: "Defect", errorMessage: stringifyUnknown(value) };
   }
 
   return { errorType: "Unknown", errorMessage: Cause.pretty(cause) };
+};
+
+const stringifyUnknown = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (value instanceof Error) return value.message;
+  if (typeof value === "object" && value !== null) {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "Unserializable object";
+    }
+  }
+  return String(value);
 };
 
 const buildTransportFields = (context: WideEventContext): Record<string, unknown> => {
@@ -164,7 +177,8 @@ export const withWideEvent: {
             : context.service;
 
         const span = yield* Effect.makeSpan(spanName);
-        const startTime = Date.now();
+        const startTime = yield* Clock.currentTimeMillis;
+        const timestamp = DateTime.formatIso(yield* DateTime.now);
 
         // Run the user effect interruptibly with an isolated accumulator, capturing the exit
         const exit = yield* effect.pipe(
@@ -174,7 +188,7 @@ export const withWideEvent: {
           Effect.exit,
         );
 
-        const endTime = Date.now();
+        const endTime = yield* Clock.currentTimeMillis;
         const durationMs = endTime - startTime;
 
         // End the span
@@ -186,7 +200,7 @@ export const withWideEvent: {
         // Build the final event — envelope always includes transport context
         const envelope: Record<string, unknown> = {
           ...buildTransportFields(context),
-          timestamp: new Date(startTime).toISOString(),
+          timestamp,
           durationMs,
           status: Exit.isSuccess(exit) ? "ok" : "error",
           traceId: span.traceId,
