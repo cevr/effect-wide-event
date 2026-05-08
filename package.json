@@ -1,6 +1,6 @@
 {
   "name": "effect-wide-event",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Wide event logging for Effect — one rich structured event per request",
   "repository": {
     "type": "git",
