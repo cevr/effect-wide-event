@@ -7,8 +7,10 @@ Inspired by [loggingsucks.com](https://loggingsucks.com/) and Stripe's [canonica
 ## Install
 
 ```sh
-bun add effect-wide-event
+bun add effect effect-wide-event
 ```
+
+`effect` is a peer dependency so applications keep one Effect runtime identity.
 
 ## Usage
 
@@ -81,7 +83,8 @@ import { WideEvent, withWideEvent, WideEventLogger } from "effect-wide-event/v3"
 ## Development
 
 This repo follows the shared Effect project scaffold: Bun, `@effect/tsgo`,
-oxlint, oxfmt, lefthook, changesets, and a v3 compatibility surface.
+oxlint, oxfmt, lefthook, changesets, peer-only Effect, and a v3 compatibility
+surface.
 
 ```sh
 bun install
