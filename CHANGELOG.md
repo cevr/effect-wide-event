@@ -1,5 +1,13 @@
 # effect-wide-event
 
+## 0.3.0
+
+### Minor Changes
+
+- [`b72862b`](https://github.com/cevr/effect-wide-event/commit/b72862b8116816431466999c16a9972623b4f1a1) Thanks [@cevr](https://github.com/cevr)! - Add semantic outcome helpers and reusable boundary context factories. `status`
+  continues to describe transport/effect success while the new `outcome`,
+  `outcomeType`, and `outcomeMessage` fields describe domain failures or warnings.
+
 ## 0.2.2
 
 ### Patch Changes
