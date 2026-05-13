@@ -1,5 +1,13 @@
 # effect-wide-event
 
+## 0.2.2
+
+### Patch Changes
+
+- [`1d5ea75`](https://github.com/cevr/effect-wide-event/commit/1d5ea75a31369d626338b538a7f373cefb2bd52b) Thanks [@cevr](https://github.com/cevr)! - Update the native Effect v4 entrypoint to support Effect 4.0.0-beta.66.
+
+- [`8dccd7d`](https://github.com/cevr/effect-wide-event/commit/8dccd7dae2ee92fe2d9da5d34e3f120a784629b8) Thanks [@cevr](https://github.com/cevr)! - Make `effect` peer-only so consumers keep a single Effect runtime identity.
+
 ## 0.2.1
 
 ### Patch Changes
