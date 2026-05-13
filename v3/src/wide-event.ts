@@ -1,4 +1,5 @@
-import { Context, Effect, Ref } from "effect";
+import { Context, Effect, Exit, Ref } from "effect";
+import type { OutcomeClassifier, WideEventOutcomeDetails } from "./boundary.js";
 
 /**
  * The service holding the wide event accumulator Ref.
@@ -33,6 +34,39 @@ export const WideEvent = {
       const ref = yield* WideEventRef;
       yield* Ref.update(ref, (current) => ({ ...current, ...fields }));
     }),
+
+  failDomain: (
+    type: string,
+    options: {
+      readonly message?: string;
+      readonly fields?: Record<string, unknown>;
+    } = {},
+  ): Effect.Effect<void, never, WideEventRef> =>
+    WideEvent.set({
+      ...options.fields,
+      outcome: "domain_error",
+      outcomeType: type,
+      ...(options.message !== undefined ? { outcomeMessage: options.message } : {}),
+    }),
+
+  warn: (
+    type: string,
+    options: {
+      readonly message?: string;
+      readonly fields?: Record<string, unknown>;
+    } = {},
+  ): Effect.Effect<void, never, WideEventRef> =>
+    WideEvent.set({
+      ...options.fields,
+      outcome: "warning",
+      outcomeType: type,
+      ...(options.message !== undefined ? { outcomeMessage: options.message } : {}),
+    }),
+
+  classifyValue:
+    <A>(classifier: (value: A) => WideEventOutcomeDetails | undefined): OutcomeClassifier<A> =>
+    (exit) =>
+      Exit.isSuccess(exit) ? classifier(exit.value) : undefined,
 
   /**
    * Read the current accumulated wide event fields.

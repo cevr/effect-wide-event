@@ -1,8 +1,8 @@
 // @effect-diagnostics strictEffectProvide:off globalErrorInEffectFailure:off
 import { Effect, Fiber, MutableRef, References } from "effect";
 import { describe, expect, it } from "effect-bun-test";
-import { WideEvent, WideEventLogger, withWideEvent } from "../src/index.js";
-import type { LogEvent } from "../src/index.js";
+import { WideEvent, WideEventBoundary, WideEventLogger, withWideEvent } from "../src/index.js";
+import type { LogEvent, WideEventContext } from "../src/index.js";
 
 const catchAll = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
   effect.pipe(
@@ -51,6 +51,48 @@ describe("WideEvent", () => {
       const annotations = events[0]!.annotations;
       // Envelope's status takes precedence over user's status
       expect(annotations["status"]).toBe("ok");
+    }),
+  );
+
+  it.live("records domain failure outcomes without changing transport status", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* WideEvent.failDomain("permission_denied", {
+        message: "Permission denied",
+        fields: { toolName: "bash" },
+      }).pipe(
+        withWideEvent(WideEventBoundary.tool("bash")),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const annotations = MutableRef.get(captured)[0]!.annotations;
+      expect(annotations["status"]).toBe("ok");
+      expect(annotations["outcome"]).toBe("domain_error");
+      expect(annotations["outcomeType"]).toBe("permission_denied");
+      expect(annotations["outcomeMessage"]).toBe("Permission denied");
+      expect(annotations["toolName"]).toBe("bash");
+      expect(annotations["service"]).toBe("tool");
+      expect(annotations["method"]).toBe("bash");
+    }),
+  );
+
+  it.live("records warning outcomes without changing transport status", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* WideEvent.warn("result_enrichment_failed", {
+        fields: { toolName: "read" },
+      }).pipe(
+        withWideEvent(WideEventBoundary.tool("read")),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const annotations = MutableRef.get(captured)[0]!.annotations;
+      expect(annotations["status"]).toBe("ok");
+      expect(annotations["outcome"]).toBe("warning");
+      expect(annotations["outcomeType"]).toBe("result_enrichment_failed");
+      expect(annotations["toolName"]).toBe("read");
     }),
   );
 
@@ -457,6 +499,36 @@ describe("withWideEvent", () => {
       expect(hookEvents[0]!["service"]).toBe("audit");
       expect(hookEvents[0]!["userId"]).toBe("456");
       expect(hookEvents[0]!["status"]).toBe("ok");
+    }),
+  );
+
+  it.live("classifies successful values into semantic outcomes", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+      const context: WideEventContext<{ allowed: boolean; reason: string }> = {
+        ...WideEventBoundary.rpc("permission.check"),
+        classifyExit: WideEvent.classifyValue<{ allowed: boolean; reason: string }>((value) =>
+          value.allowed
+            ? undefined
+            : {
+                outcome: "domain_error",
+                type: "permission_denied",
+                fields: { reason: value.reason },
+              },
+        ),
+      };
+
+      yield* withWideEvent(Effect.succeed({ allowed: false, reason: "policy" }), context).pipe(
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const annotations = MutableRef.get(captured)[0]!.annotations;
+      expect(annotations["status"]).toBe("ok");
+      expect(annotations["outcome"]).toBe("domain_error");
+      expect(annotations["outcomeType"]).toBe("permission_denied");
+      expect(annotations["reason"]).toBe("policy");
+      expect(annotations["service"]).toBe("rpc");
+      expect(annotations["method"]).toBe("permission.check");
     }),
   );
 });
