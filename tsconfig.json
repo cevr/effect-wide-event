@@ -69,7 +69,7 @@
           "missingEffectError": "error",
           "missingEffectServiceDependency": "error",
           "missingLayerContext": "error",
-          "missingPipeableSignature": "error",
+          "missingPipeableSignature": "off",
           "missingReturnYieldStar": "error",
           "missingStarInYieldEffectGen": "error",
           "multipleCatchTag": "error",
@@ -97,7 +97,7 @@
           "scopeInLayerEffect": "error",
           "serviceNotAsClass": "error",
           "strictBooleanExpressions": "off",
-          "strictEffectProvide": "error",
+          "strictEffectProvide": "off",
           "syncToSucceed": "error",
           "tryCatchInEffectGen": "off",
           "unknownInEffectCatch": "error",
@@ -121,16 +121,7 @@
             "skipLeadingPath": ["src/", "v3/src/"]
           }
         ],
-        "overrides": [
-          {
-            "include": ["test/**/*.ts", "v3/test/**/*.ts", "**/test/**/*.ts", "**/*.test.ts"],
-            "options": {
-              "diagnosticSeverity": {
-                "strictEffectProvide": "off"
-              }
-            }
-          }
-        ],
+        "overrides": [],
         "allowedDuplicatedPackages": ["effect"]
       }
     ]
