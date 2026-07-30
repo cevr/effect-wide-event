@@ -504,15 +504,16 @@ describe("withWideEvent", () => {
       const captured = MutableRef.make<Array<LogEvent>>([]);
       const context: WideEventContext<{ allowed: boolean; reason: string }> = {
         ...WideEventBoundary.rpc("permission.check"),
-        classifyExit: WideEvent.classifyValue<{ allowed: boolean; reason: string }>((value) =>
-          value.allowed
-            ? undefined
-            : {
-                outcome: "domain_error",
-                type: "permission_denied",
-                fields: { reason: value.reason },
-              },
-        ),
+        classifyExit: WideEvent.classifyValue<{ allowed: boolean; reason: string }>((value) => {
+          if (value.allowed) {
+            return undefined;
+          }
+          return {
+            outcome: "domain_error",
+            type: "permission_denied",
+            fields: { reason: value.reason },
+          };
+        }),
       };
 
       yield* withWideEvent(Effect.succeed({ allowed: false, reason: "policy" }), context).pipe(

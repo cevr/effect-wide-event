@@ -136,6 +136,31 @@ const buildTransportFields = (context: WideEventContextBase): Record<string, unk
   return fields;
 };
 
+const transportStatus = (exit: Exit.Exit<unknown, unknown>): "ok" | "error" => {
+  if (Exit.isSuccess(exit)) {
+    return "ok";
+  }
+  return "error";
+};
+
+/** Only successful exits carry a semantic outcome — failures report via errorType. */
+const classifyOutcome = <A, E>(
+  context: WideEventContext<A, E>,
+  exit: Exit.Exit<A, E>,
+): WideEventOutcomeDetails | undefined => {
+  if (Exit.isSuccess(exit)) {
+    return context.classifyExit?.(exit);
+  }
+  return undefined;
+};
+
+const buildSpanName = (context: WideEventContextBase): string => {
+  if (context.method !== undefined && context.path !== undefined) {
+    return `${context.method} ${context.path}`;
+  }
+  return context.service;
+};
+
 const applyOutcome = (
   event: Record<string, unknown>,
   outcome: WideEventOutcomeDetails | undefined,
@@ -259,10 +284,7 @@ export const withWideEvent: {
         };
         const ref = Ref.makeUnsafe<Record<string, unknown>>(initialFields);
 
-        const spanName =
-          context.method !== undefined && context.path !== undefined
-            ? `${context.method} ${context.path}`
-            : context.service;
+        const spanName = buildSpanName(context);
 
         const span = yield* Effect.makeSpan(spanName);
         const startTime = yield* Clock.currentTimeMillis;
@@ -284,13 +306,14 @@ export const withWideEvent: {
 
         // Read accumulated user fields (safe — ref is boundary-local)
         const userFields = Ref.getUnsafe(ref);
+        const succeeded = Exit.isSuccess(exit);
 
         // Build the final event — envelope always includes transport context
         const envelope: Record<string, unknown> = {
           ...buildTransportFields(context),
           timestamp,
           durationMs,
-          status: Exit.isSuccess(exit) ? "ok" : "error",
+          status: transportStatus(exit),
           traceId: span.traceId,
           spanId: span.spanId,
           spanName,
@@ -305,11 +328,7 @@ export const withWideEvent: {
 
         // Merge: envelope fields take precedence over user fields for reserved keys
         const finalEvent = { ...userFields, ...envelope };
-        applyOutcome(
-          finalEvent,
-          Exit.isSuccess(exit) ? context.classifyExit?.(exit) : undefined,
-          Exit.isSuccess(exit),
-        );
+        applyOutcome(finalEvent, classifyOutcome(context, exit), succeeded);
 
         // Emit at the configured log level
         const level = context.level ?? "Info";

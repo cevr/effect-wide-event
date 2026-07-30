@@ -1,5 +1,5 @@
 import { Context, Effect, Exit, Ref } from "effect";
-import type { OutcomeClassifier, WideEventOutcomeDetails } from "./boundary.js";
+import type { OutcomeClassifier, WideEventOutcome, WideEventOutcomeDetails } from "./boundary.js";
 
 /**
  * The service holding the wide event accumulator Ref.
@@ -20,6 +20,27 @@ export class WideEventRef extends Context.Tag("effect-wide-event/wide-event/Wide
  * Must be used inside a `withWideEvent` boundary — the boundary provides
  * the accumulator scope.
  */
+interface OutcomeOptions {
+  readonly message?: string;
+  readonly fields?: Record<string, unknown>;
+}
+
+const setOutcome = (
+  outcome: WideEventOutcome,
+  type: string,
+  options: OutcomeOptions,
+): Effect.Effect<void, never, WideEventRef> => {
+  const fields: Record<string, unknown> = {
+    ...options.fields,
+    outcome,
+    outcomeType: type,
+  };
+  if (options.message !== undefined) {
+    fields["outcomeMessage"] = options.message;
+  }
+  return WideEvent.set(fields);
+};
+
 export const WideEvent = {
   /**
    * Merge fields into the current wide event.
@@ -37,36 +58,20 @@ export const WideEvent = {
 
   failDomain: (
     type: string,
-    options: {
-      readonly message?: string;
-      readonly fields?: Record<string, unknown>;
-    } = {},
-  ): Effect.Effect<void, never, WideEventRef> =>
-    WideEvent.set({
-      ...options.fields,
-      outcome: "domain_error",
-      outcomeType: type,
-      ...(options.message !== undefined ? { outcomeMessage: options.message } : {}),
-    }),
+    options: OutcomeOptions = {},
+  ): Effect.Effect<void, never, WideEventRef> => setOutcome("domain_error", type, options),
 
-  warn: (
-    type: string,
-    options: {
-      readonly message?: string;
-      readonly fields?: Record<string, unknown>;
-    } = {},
-  ): Effect.Effect<void, never, WideEventRef> =>
-    WideEvent.set({
-      ...options.fields,
-      outcome: "warning",
-      outcomeType: type,
-      ...(options.message !== undefined ? { outcomeMessage: options.message } : {}),
-    }),
+  warn: (type: string, options: OutcomeOptions = {}): Effect.Effect<void, never, WideEventRef> =>
+    setOutcome("warning", type, options),
 
   classifyValue:
     <A>(classifier: (value: A) => WideEventOutcomeDetails | undefined): OutcomeClassifier<A> =>
-    (exit) =>
-      Exit.isSuccess(exit) ? classifier(exit.value) : undefined,
+    (exit) => {
+      if (Exit.isSuccess(exit)) {
+        return classifier(exit.value);
+      }
+      return undefined;
+    },
 
   /**
    * Read the current accumulated wide event fields.
