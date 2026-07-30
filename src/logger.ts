@@ -1,5 +1,5 @@
 import type { Layer } from "effect";
-import { Logger, MutableRef, References } from "effect";
+import { Inspectable, Logger, MutableRef, References } from "effect";
 
 /**
  * A captured log event for testing.
@@ -27,38 +27,40 @@ export const WideEventLogger = {
    * into a single JSON object.
    */
   Json: Logger.layer([
-    Logger.make<unknown, void>(({ cause, date, fiber, logLevel, message }) => {
-      const annotations = fiber.getRef(References.CurrentLogAnnotations);
-      const spans = fiber.getRef(References.CurrentLogSpans);
+    Logger.withConsoleLog(
+      Logger.make<unknown, string>(({ cause, date, fiber, logLevel, message }) => {
+        const annotations = fiber.getRef(References.CurrentLogAnnotations);
+        const spans = fiber.getRef(References.CurrentLogSpans);
 
-      const entry: Record<string, unknown> = {
-        timestamp: date.toISOString(),
-        level: logLevel.toUpperCase(),
-        message,
-      };
+        const entry: Record<string, unknown> = {
+          timestamp: date.toISOString(),
+          level: logLevel.toUpperCase(),
+          message,
+        };
 
-      // Flatten annotations into the entry
-      for (const [key, value] of Object.entries(annotations)) {
-        entry[key] = value;
-      }
-
-      // Add span info
-      if (spans.length > 0) {
-        const currentSpan = spans.at(-1);
-        if (currentSpan !== undefined) {
-          entry["spanLabel"] = currentSpan[0];
-          entry["spanDuration"] = date.getTime() - currentSpan[1];
+        // Flatten annotations into the entry
+        for (const [key, value] of Object.entries(annotations)) {
+          entry[key] = value;
         }
-      }
 
-      // Add cause if present
-      if (cause.reasons.length > 0) {
-        entry["cause"] = cause.toString();
-      }
+        // Add span info
+        if (spans.length > 0) {
+          const currentSpan = spans.at(-1);
+          if (currentSpan !== undefined) {
+            entry["spanLabel"] = currentSpan[0];
+            entry["spanDuration"] = date.getTime() - currentSpan[1];
+          }
+        }
 
-      // biome-ignore lint/suspicious/noConsole: logger output
-      console.log(JSON.stringify(entry));
-    }),
+        // Add cause if present
+        if (cause.reasons.length > 0) {
+          entry["cause"] = cause.toString();
+        }
+
+        // Whitespace 0 keeps one event per line; toStringUnknown tolerates cycles.
+        return Inspectable.toStringUnknown(entry, 0);
+      }),
+    ),
   ]),
 
   /**

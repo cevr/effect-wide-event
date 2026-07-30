@@ -1,4 +1,4 @@
-import { Cause, Clock, DateTime, Effect, Exit, Ref } from "effect";
+import { Cause, Clock, DateTime, Effect, Exit, Inspectable, Ref } from "effect";
 import type { LogLevel } from "effect";
 import { dual } from "effect/Function";
 import { WideEventRef } from "./wide-event.js";
@@ -117,14 +117,8 @@ const defaultExtractError: ErrorExtractor = (cause) => {
 const stringifyUnknown = (value: unknown): string => {
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.message;
-  if (typeof value === "object" && value !== null) {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return "Unserializable object";
-    }
-  }
-  return String(value);
+  // toStringUnknown handles cycles and non-serializable values; 0 keeps it on one line.
+  return Inspectable.toStringUnknown(value, 0);
 };
 
 const buildTransportFields = (context: WideEventContextBase): Record<string, unknown> => {
