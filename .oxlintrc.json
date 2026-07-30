@@ -1,16 +1,15 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "options": {
-    "typeAware": true
-  },
   "categories": {
     "correctness": "error",
     "suspicious": "error",
     "perf": "error"
   },
-  "plugins": ["typescript", "import"],
+  "plugins": ["typescript", "import", "node"],
+  "jsPlugins": ["oxlint-plugin-effect/plugin"],
   "rules": {
     "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-type-assertion": "error",
     "typescript/no-non-null-assertion": "error",
     "typescript/no-extra-non-null-assertion": "error",
     "typescript/no-non-null-asserted-optional-chain": "error",
@@ -20,23 +19,33 @@
     ],
     "import/namespace": "off",
     "import/no-duplicates": "error",
-    "no-underscore-dangle": ["error", { "allow": ["_tag"] }],
+    "node/no-process-env": "error",
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-    "typescript/no-unsafe-type-assertion": "off",
-    "typescript/no-unnecessary-type-parameters": "off",
-    "typescript/consistent-return": "off",
-    "typescript/no-unnecessary-type-arguments": "off",
-    "typescript/unbound-method": "off",
-    "typescript/no-unnecessary-type-conversion": "off",
-    "typescript/no-redundant-type-constituents": "off"
+    "no-underscore-dangle": "off",
+    "no-nested-ternary": "error",
+    "complexity": ["error", 20],
+    "no-shadow": "off",
+    "effect/noAsyncFunction": "error",
+    "effect/noDynamicImports": "error",
+    "effect/noEffectBind": "error",
+    "effect/noEffectDo": "error",
+    "effect/noGlobals": "error",
+    "effect/noNewError": "error",
+    "effect/noNewPromise": "error",
+    "effect/noNodeBuiltinImport": "error",
+    "effect/noTernary": "error",
+    "effect/noTestLifecycleHooks": "error",
+    "effect/noThrowStatement": "error",
+    "effect/noTryCatch": "error"
   },
-  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/*.d.ts"],
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/*.d.ts", "**/bin/**", "**/scripts/**"],
   "overrides": [
     {
-      "files": ["**/*.test.ts"],
+      "files": ["**/tests/**", "**/test/**", "**/*.test.ts", "**/*.test.tsx"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
-        "typescript/no-explicit-any": "off"
+        "typescript/no-explicit-any": "off",
+        "typescript/no-unsafe-type-assertion": "off"
       }
     }
   ]

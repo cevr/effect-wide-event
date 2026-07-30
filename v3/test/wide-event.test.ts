@@ -115,9 +115,7 @@ describe("withWideEvent", () => {
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
 
-      yield* Effect.gen(function* () {
-        yield* WideEvent.set({ userId: "123" });
-      }).pipe(
+      yield* WideEvent.set({ userId: "123" }).pipe(
         withWideEvent({ service: "checkout", method: "POST", path: "/api/checkout" }),
         Effect.provide(WideEventLogger.Capture(captured)),
       );
@@ -170,11 +168,9 @@ describe("withWideEvent", () => {
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
 
-      yield* Effect.gen(function* () {
-        // Called without `new` — native Error constructors return an identical
-        // instance either way, and this test needs a real TypeError failure.
-        return yield* Effect.fail(TypeError("bad input"));
-      }).pipe(
+      // Called without `new` — native Error constructors return an identical
+      // instance either way, and this test needs a real TypeError failure.
+      yield* Effect.fail(TypeError("bad input")).pipe(
         withWideEvent({ service: "validation" }),
         Effect.catchAll(() => Effect.void),
         Effect.provide(WideEventLogger.Capture(captured)),
@@ -192,9 +188,7 @@ describe("withWideEvent", () => {
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
 
-      yield* Effect.gen(function* () {
-        return yield* Effect.die(new RangeError("stack overflow"));
-      }).pipe(
+      yield* Effect.die(new RangeError("stack overflow")).pipe(
         withWideEvent({ service: "compute" }),
         Effect.catchAllDefect(() => Effect.void),
         Effect.provide(WideEventLogger.Capture(captured)),
@@ -235,9 +229,7 @@ describe("withWideEvent", () => {
         yield* WideEvent.set({ outer: true });
 
         // Inner boundary
-        yield* Effect.gen(function* () {
-          yield* WideEvent.set({ inner: true });
-        }).pipe(withWideEvent({ service: "inner-svc" }));
+        yield* WideEvent.set({ inner: true }).pipe(withWideEvent({ service: "inner-svc" }));
 
         // After inner boundary, outer fields should still be intact
         const fields = yield* WideEvent.get;
@@ -504,7 +496,7 @@ describe("withWideEvent", () => {
   it.live("classifies successful values into semantic outcomes", () =>
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
-      const context: WideEventContext<{ allowed: boolean; reason: string }> = {
+      const context: WideEventContext<{ allowed: boolean; reason: string }, never> = {
         ...WideEventBoundary.rpc("permission.check"),
         classifyExit: WideEvent.classifyValue<{ allowed: boolean; reason: string }>((value) => {
           if (value.allowed) {

@@ -1,4 +1,4 @@
-// @effect-diagnostics strictEffectProvide:off globalErrorInEffectFailure:off
+// @effect-diagnostics globalErrorInEffectFailure:off
 import { Effect, Fiber, MutableRef, References } from "effect";
 import { describe, expect, it } from "effect-bun-test";
 import { WideEvent, WideEventBoundary, WideEventLogger, withWideEvent } from "../src/index.js";
@@ -507,7 +507,7 @@ describe("withWideEvent", () => {
   it.live("classifies successful values into semantic outcomes", () =>
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
-      const context: WideEventContext<{ allowed: boolean; reason: string }> = {
+      const context: WideEventContext<{ allowed: boolean; reason: string }, never> = {
         ...WideEventBoundary.rpc("permission.check"),
         classifyExit: WideEvent.classifyValue<{ allowed: boolean; reason: string }>((value) => {
           if (value.allowed) {

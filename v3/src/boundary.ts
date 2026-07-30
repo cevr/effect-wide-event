@@ -340,5 +340,5 @@ export const withWideEvent: {
         // Re-surface the original exit
         return yield* exit;
       }),
-    ).pipe(Effect.withSpan("withWideEvent")) as Effect.Effect<A, E, Exclude<R, WideEventRef>>,
+    ).pipe(Effect.withSpan("withWideEvent")),
 );
