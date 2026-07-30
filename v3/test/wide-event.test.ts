@@ -171,7 +171,9 @@ describe("withWideEvent", () => {
       const captured = MutableRef.make<Array<LogEvent>>([]);
 
       yield* Effect.gen(function* () {
-        return yield* Effect.fail(new TypeError("bad input"));
+        // Called without `new` — native Error constructors return an identical
+        // instance either way, and this test needs a real TypeError failure.
+        return yield* Effect.fail(TypeError("bad input"));
       }).pipe(
         withWideEvent({ service: "validation" }),
         Effect.catchAll(() => Effect.void),
