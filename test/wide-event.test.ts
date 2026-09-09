@@ -531,4 +531,59 @@ describe("withWideEvent", () => {
       expect(annotations["method"]).toBe("permission.check");
     }),
   );
+
+  it.live("setOptional records fields when a boundary is present", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* Effect.gen(function* () {
+        yield* WideEvent.setOptional({ sentryEventId: "abc123" });
+      }).pipe(
+        withWideEvent({ service: "test" }),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const events = MutableRef.get(captured);
+      expect(events).toHaveLength(1);
+      expect(events[0]!.annotations["sentryEventId"]).toBe("abc123");
+    }),
+  );
+
+  it.live("setOptional is a no-op with no boundary", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      // No `withWideEvent` here. `set` would not typecheck, because it needs
+      // `WideEventRef`. `setOptional` carries no requirement and must not fail.
+      yield* WideEvent.setOptional({ sentryEventId: "abc123" }).pipe(
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      expect(MutableRef.get(captured)).toHaveLength(0);
+    }),
+  );
+
+  it.live("setOptional writes into the nearest enclosing boundary only", () =>
+    Effect.gen(function* () {
+      const captured = MutableRef.make<Array<LogEvent>>([]);
+
+      yield* Effect.gen(function* () {
+        yield* WideEvent.set({ outerField: "outer" });
+        yield* Effect.gen(function* () {
+          yield* WideEvent.setOptional({ innerField: "inner" });
+        }).pipe(withWideEvent({ service: "inner" }));
+      }).pipe(
+        withWideEvent({ service: "outer" }),
+        Effect.provide(WideEventLogger.Capture(captured)),
+      );
+
+      const events = MutableRef.get(captured);
+      expect(events).toHaveLength(2);
+      const inner = events.find((event) => event.annotations["service"] === "inner")!;
+      const outer = events.find((event) => event.annotations["service"] === "outer")!;
+      expect(inner.annotations["innerField"]).toBe("inner");
+      expect(outer.annotations["innerField"]).toBeUndefined();
+      expect(outer.annotations["outerField"]).toBe("outer");
+    }),
+  );
 });

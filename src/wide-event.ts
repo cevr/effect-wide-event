@@ -1,4 +1,4 @@
-import { Context, Effect, Exit, Ref } from "effect";
+import { Context, Effect, Exit, Option, Ref } from "effect";
 import type { OutcomeClassifier, WideEventOutcomeDetails } from "./boundary.js";
 
 /**
@@ -32,6 +32,31 @@ export const WideEvent = {
     Effect.gen(function* () {
       const ref = yield* WideEventRef;
       yield* Ref.update(ref, (current) => ({ ...current, ...fields }));
+    }),
+
+  /**
+   * Merge fields into the current wide event when a boundary is present, and
+   * do nothing when there is none.
+   *
+   * `set` requires `WideEventRef`, so shared code that annotates an event must
+   * force every caller into a boundary. This variant carries no requirement,
+   * so a library or a cross-cutting concern (error reporting, a cache, an
+   * instrumented client) can enrich the event where one exists without
+   * constraining callers that run outside one.
+   *
+   * ```ts
+   * Effect.gen(function* () {
+   *   yield* WideEvent.setOptional({ sentryEventId: id })
+   * })
+   * ```
+   */
+  setOptional: (fields: Record<string, unknown>): Effect.Effect<void> =>
+    Effect.gen(function* () {
+      const ref = yield* Effect.serviceOption(WideEventRef);
+      if (Option.isNone(ref)) {
+        return;
+      }
+      yield* Ref.update(ref.value, (current) => ({ ...current, ...fields }));
     }),
 
   failDomain: (
