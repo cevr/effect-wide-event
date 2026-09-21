@@ -1,5 +1,13 @@
 # effect-wide-event
 
+## 0.4.0
+
+### Minor Changes
+
+- [`54dc3e2`](https://github.com/cevr/effect-wide-event/commit/54dc3e224ce7fd42453cc34e62dc3df560544775) Thanks [@cevr](https://github.com/cevr)! - Add `WideEvent.setOptional`, which merges fields when a boundary is present and does nothing when there is none.
+
+  `WideEvent.set` requires `WideEventRef`, so shared code that annotates an event forces every caller into a boundary. `setOptional` carries no requirement, so a library or a cross-cutting concern (error reporting, a cache, an instrumented client) can enrich the event where one exists without constraining callers that run outside one. It writes into the nearest enclosing boundary, matching `set`.
+
 ## 0.3.0
 
 ### Minor Changes
