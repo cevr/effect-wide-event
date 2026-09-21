@@ -113,12 +113,12 @@
           {
             "target": "service",
             "pattern": "default",
-            "skipLeadingPath": ["src/", "v3/src/"]
+            "skipLeadingPath": ["src/"]
           },
           {
             "target": "error",
             "pattern": "default",
-            "skipLeadingPath": ["src/", "v3/src/"]
+            "skipLeadingPath": ["src/"]
           }
         ],
         "overrides": [],

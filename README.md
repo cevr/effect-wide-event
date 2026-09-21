@@ -10,14 +10,13 @@ Inspired by [loggingsucks.com](https://loggingsucks.com/) and Stripe's [canonica
 bun add effect effect-wide-event
 ```
 
-`effect` is a peer dependency so applications keep one Effect runtime identity.
+Requires Effect v4. `effect` is a peer dependency so applications keep one Effect runtime identity.
 
 ## Usage
 
 ```ts
 import { Effect } from "effect";
 import { WideEvent, withWideEvent, WideEventLogger } from "effect-wide-event";
-// v3: import from "effect-wide-event/v3"
 
 const handleCheckout = Effect.gen(function* () {
   yield* WideEvent.set({ userId: "123", plan: "pro" });
@@ -72,19 +71,10 @@ Produces one log event:
 - **Always emits** — the boundary is uninterruptible after the user effect completes. Interruption, failures, and defects all produce an event.
 - **Envelope** — `service`, `status`, `durationMs`, `traceId`, `spanId`, `timestamp`, and error info are always present.
 
-## v3 / v4
-
-Default export is Effect v4. For v3:
-
-```ts
-import { WideEvent, withWideEvent, WideEventLogger } from "effect-wide-event/v3";
-```
-
 ## Development
 
 This repo follows the shared Effect project scaffold: Bun, `@effect/tsgo`,
-oxlint, oxfmt, lefthook, changesets, peer-only Effect, and a v3 compatibility
-surface.
+oxlint, oxfmt, lefthook, changesets, and peer-only Effect v4.
 
 ```sh
 bun install

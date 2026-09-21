@@ -9,7 +9,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Wide Events
 
-Patterns for `effect-wide-event` — one structured event per request per service.
+Patterns for `effect-wide-event` with Effect v4 — one structured event per request per service.
 
 ## Quick Reference
 
@@ -28,7 +28,6 @@ Patterns for `effect-wide-event` — one structured event per request per servic
 
 ```ts
 import { WideEvent, withWideEvent, WideEventLogger } from "effect-wide-event";
-// v3: import from "effect-wide-event/v3"
 
 // Sprinkle set() throughout your request handler
 const handler = Effect.gen(function* () {
@@ -70,16 +69,6 @@ const events = MutableRef.get(captured);
 expect(events).toHaveLength(1);
 expect(events[0].annotations["status"]).toBe("ok");
 ```
-
-## v3 vs v4 Internals
-
-| Concern            | v4                                               | v3                              |
-| ------------------ | ------------------------------------------------ | ------------------------------- |
-| Accumulator tag    | `ServiceMap.Service`                             | `Context.Tag`                   |
-| Logger wiring      | `Logger.layer([...])`                            | `Logger.replace(...)`           |
-| Silent logger      | `Logger.layer([])`                               | `Logger.remove(defaultLogger)`  |
-| Pretty logger      | `Logger.consolePretty()`                         | `Logger.prettyLoggerDefault`    |
-| Logger annotations | `fiber.getRef(References.CurrentLogAnnotations)` | `options.annotations` (HashMap) |
 
 ## Gotchas
 
