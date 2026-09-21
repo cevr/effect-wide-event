@@ -16,10 +16,18 @@
       "import": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       }
     },
     "./v3": {
       "import": {
+        "types": "./v3/dist/index.d.ts",
+        "default": "./v3/dist/index.js"
+      },
+      "default": {
         "types": "./v3/dist/index.d.ts",
         "default": "./v3/dist/index.js"
       }
