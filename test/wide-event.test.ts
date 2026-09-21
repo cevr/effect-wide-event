@@ -539,9 +539,7 @@ describe("withWideEvent", () => {
     Effect.gen(function* () {
       const captured = MutableRef.make<Array<LogEvent>>([]);
 
-      yield* Effect.gen(function* () {
-        yield* WideEvent.setOptional({ sentryEventId: "abc123" });
-      }).pipe(
+      yield* WideEvent.setOptional({ sentryEventId: "abc123" }).pipe(
         withWideEvent({ service: "test" }),
         Effect.provide(WideEventLogger.Capture(captured)),
       );
@@ -572,9 +570,9 @@ describe("withWideEvent", () => {
 
       yield* Effect.gen(function* () {
         yield* WideEvent.set({ outerField: "outer" });
-        yield* Effect.gen(function* () {
-          yield* WideEvent.setOptional({ innerField: "inner" });
-        }).pipe(withWideEvent({ service: "inner" }));
+        yield* WideEvent.setOptional({ innerField: "inner" }).pipe(
+          withWideEvent({ service: "inner" }),
+        );
       }).pipe(
         withWideEvent({ service: "outer" }),
         Effect.provide(WideEventLogger.Capture(captured)),
