@@ -1,5 +1,17 @@
 # effect-wide-event
 
+## 0.5.0
+
+### Minor Changes
+
+- [`0cca5c6`](https://github.com/cevr/effect-wide-event/commit/0cca5c6ba35cd7b4a8fdf401b99257c52d83d3c7) Thanks [@cevr](https://github.com/cevr)! - Remove the `effect-wide-event/v3` endpoint and Effect v3 support. The package now supports Effect v4 only. Applications that use the v3 endpoint must upgrade to Effect v4 and import from `effect-wide-event`.
+
+### Patch Changes
+
+- [`9154926`](https://github.com/cevr/effect-wide-event/commit/9154926b74089a3f95b6090d9ba0b8fb3d547b6a) Thanks [@cevr](https://github.com/cevr)! - Route log output and value stringification through Effect primitives (`Logger.withConsoleLog`, `Inspectable.toStringUnknown`), keeping emitted events byte-identical.
+
+- [`0778f1a`](https://github.com/cevr/effect-wide-event/commit/0778f1a8d6c1489d7fa103a43c320afecdeefed7) Thanks [@cevr](https://github.com/cevr)! - Add default export conditions so CommonJS consumers can load the existing ESM files on Node.js versions that support require(esm).
+
 ## 0.4.0
 
 ### Minor Changes
