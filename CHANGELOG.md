@@ -1,5 +1,11 @@
 # effect-wide-event
 
+## 0.6.0
+
+### Minor Changes
+
+- [`46cffc1`](https://github.com/cevr/effect-wide-event/commit/46cffc1962fea712e06f72087d0010d96ecc01c4) Thanks [@cevr](https://github.com/cevr)! - Requires Effect 4.0.0. The peer range is now `>=4.0.0`.
+
 ## 0.5.0
 
 ### Minor Changes
